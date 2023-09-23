@@ -69,10 +69,6 @@
     path: /etc/nginx/cert/proxy.csr
     privatekey_path: /etc/nginx/cert/proxy.key
     common_name: "{{ inventory_hostname }}"
-    organizational_unit: IT
-    organization_name: Prom Proxy
-    country_name: US
-    email_address: admin@proxy.com
   become: true
 
 - name: Generate a Self-Signed Certificate
