@@ -9,26 +9,28 @@
 
 - name: Updating repositories...
   apt: update_cache=yes cache_valid_time=3600 force=yes
-  become: yes
+  become: true
   changed_when: false
 
 - name: Install nginx
   apt:
     state: latest
     pkg: nginx-core
-  become: yes
+  become: true
   register: st1
 
 - name: Ensure pip is installed
   package:
     name: python3-pip
     state: present
+  become: true
 
 - name: Install cryptography python module
   pip:
     name: cryptography
     state: present
     executable: pip3
+  become: true
 
 - name: Create folders
   file:
@@ -46,7 +48,7 @@
   with_items:
     - '/etc/nginx/sites-available/default'
     - '/etc/nginx/sites-enabled/default'
-  become: yes
+  become: true
   register: default_conf
 
 - name: Generate dhparams.pem for nginx if it not exists
@@ -95,7 +97,7 @@
   service:
     name: nginx
     state: restarted
-  become: yes
+  become: true
   when: >
     default_conf.changed or 
     st1.changed or 
@@ -112,7 +114,7 @@
     source: "{{item}}"
     jump: ACCEPT
     comment: "Proxy {{item}}"
-  become: yes
+  become: true
   loop: "{{proxy_allow}}"
   register: iptables
 
@@ -121,7 +123,7 @@
     iptables-save | grep -v 'TEMP ' | grep -v 'LIBVIRT_' \
     | grep -v -i 'docker' | grep -v 'A FORWARD ' \
     | grep -v 'ufw-' >/etc/iptables/rules.v4
-  become: yes
+  become: true
   when: iptables.changed
   check_mode: no
 
