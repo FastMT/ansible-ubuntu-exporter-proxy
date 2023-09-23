@@ -1,3 +1,7 @@
 # Listen IP and port for HTTP proxy
 ubuntu_exporter_proxy_listen_ip: "0.0.0.0"
 ubuntu_exporter_proxy_listen_port: "8888"
+
+# Allowed ports for connects via proxy
+ubuntu_exporter_proxy_allowed_ports:
+  - 9100
