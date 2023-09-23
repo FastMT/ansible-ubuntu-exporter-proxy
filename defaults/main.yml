@@ -2,6 +2,9 @@
 ubuntu_exporter_proxy_listen_ip: "0.0.0.0"
 ubuntu_exporter_proxy_listen_port: "8888"
 
+# HTTPS connection mode (experimental)
+ubuntu_exporter_proxy_https: false
+
 # Allowed ports for connects via proxy
 ubuntu_exporter_proxy_allowed_ports:
   - 9100
