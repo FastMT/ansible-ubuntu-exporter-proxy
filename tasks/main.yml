@@ -33,7 +33,7 @@
   copy: 
     content: |
       server {
-          listen {{ ubuntu_exporter_proxy_port }};
+          listen {{ubuntu_exporter_proxy_listen_ip}}:{{ ubuntu_exporter_proxy_listen_port }};
           # forward proxy for non-CONNECT request
           location / {
               proxy_pass http://$http_host;
@@ -55,10 +55,11 @@
     st2.changed
 
 - name: Allow new incoming SYN packets on TCP (Proxy)
-  iptables:
+  ansible.builtin.iptables:
     chain: INPUT
     protocol: tcp
-    destination_port: "{{ ubuntu_exporter_proxy_port }}"
+    destination: "{{ubuntu_exporter_proxy_listen_ip}}"
+    destination_port: "{{ ubuntu_exporter_proxy_listen_port }}"
     ctstate: NEW
     syn: match
     source: "{{item}}"

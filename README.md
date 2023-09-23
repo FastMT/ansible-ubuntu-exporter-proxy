@@ -30,8 +30,10 @@ playbook.yml:
     proxy_allow:
       - '10.0.0.0/8'
       - '1.2.3.4'
+    # Listen IP - optional parameter (default 0.0.0.0)
+    ubuntu_exporter_proxy_listen_ip: "0.0.0.0"
     # Listen port - optional parameter (default 8888)
-    ubuntu_exporter_proxy_port: 8888 
+    ubuntu_exporter_proxy_listen_port: 8888 
 ```
 
 prometheus.yml:
