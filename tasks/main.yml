@@ -1,0 +1,79 @@
+#####################################################################################
+# Global
+#
+#- name: Gathering facts if it was not done before
+#  setup:
+#  when: ansible_facts['os_family'] is not defined
+
+### 
+
+- name: Updating repositories...
+  apt: update_cache=yes cache_valid_time=3600 force=yes
+  become: yes
+  changed_when: false
+
+- name: Install nginx
+  apt:
+    state: latest
+    pkg: nginx-core
+  become: yes
+  register: st1
+
+- name: Remove default nginx configs
+  file: 
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - '/etc/nginx/sites-available/default'
+    - '/etc/nginx/sites-enabled/default'
+  become: yes
+  register: default_conf
+
+- name: Deploy /etc/nginx/conf.d/proxy.conf
+  copy: 
+    content: |
+      server {
+          listen {{ ubuntu_exporter_proxy_port }};
+          # forward proxy for non-CONNECT request
+          location / {
+              proxy_pass http://$http_host;
+          }
+      }
+    dest: /etc/nginx/conf.d/proxy.conf
+    mode: 0644
+  become: yes
+  register: st2
+
+- name: Restart nginx after config change
+  service:
+    name: nginx
+    state: restarted
+  become: yes
+  when: >
+    default_conf.changed or 
+    st1.changed or 
+    st2.changed
+
+- name: Allow new incoming SYN packets on TCP (Proxy)
+  iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: "{{ ubuntu_exporter_proxy_port }}"
+    ctstate: NEW
+    syn: match
+    source: "{{item}}"
+    jump: ACCEPT
+    comment: "Proxy {{item}}"
+  become: yes
+  loop: "{{proxy_allow}}"
+  register: iptables
+
+- name: Save iptables rules
+  shell: |
+    iptables-save | grep -v 'TEMP ' | grep -v 'LIBVIRT_' \
+    | grep -v -i 'docker' | grep -v 'A FORWARD ' \
+    | grep -v 'ufw-' >/etc/iptables/rules.v4
+  become: yes
+  when: iptables.changed
+  check_mode: no
+

@@ -1,0 +1,2 @@
+# Port for HTTP proxy
+ubuntu_exporter_proxy_port: "8888"
