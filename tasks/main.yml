@@ -19,6 +19,17 @@
   become: yes
   register: st1
 
+- name: Ensure pip is installed
+  package:
+    name: python3-pip
+    state: present
+
+- name: Install cryptography python module
+  pip:
+    name: cryptography
+    state: present
+    executable: pip3
+
 - name: Create folders
   file:
     path: "{{item.path}}"
