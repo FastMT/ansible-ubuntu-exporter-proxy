@@ -19,6 +19,15 @@
   become: yes
   register: st1
 
+- name: Create folders
+  file:
+    path: "{{item.path}}"
+    state: directory
+    mode: "{{ item.mode }}"
+  become: true
+  loop:
+    - { mode: 755, path: "/etc/nginx/cert" }
+
 - name: Remove default nginx configs
   file: 
     name: "{{ item }}"
@@ -29,25 +38,46 @@
   become: yes
   register: default_conf
 
-- name: Deploy /etc/nginx/conf.d/proxy.conf
-  copy: 
-    content: |
-      server {
-          listen {{ubuntu_exporter_proxy_listen_ip}}:{{ ubuntu_exporter_proxy_listen_port }};
+- name: Generate dhparams.pem for nginx if it not exists
+  shell: "openssl dhparam -out /etc/nginx/dhparams.pem 2048"
+  args:
+    creates: "/etc/nginx/dhparams.pem"
+  check_mode: no
+  become: true
 
-          # Block connections to not allowed ports
-          if ($http_host !~* ":({{ ubuntu_exporter_proxy_allowed_ports | join('|') }})$") {
-              return 403; # Forbidden
-          }
+- name: Generate a Private Key
+  openssl_privatekey:
+    path: /etc/nginx/cert/proxy.key
+    size: 4096
+  become: true
 
-          # Forward proxy for non-CONNECT request
-          location / {
-              proxy_pass http://$http_host;
-          }
-      }
-    dest: /etc/nginx/conf.d/proxy.conf
-    mode: 0644
-  become: yes
+- name: Generate a CSR (Certificate Signing Request)
+  openssl_csr:
+    path: /etc/nginx/cert/proxy.csr
+    privatekey_path: /etc/nginx/cert/proxy.key
+    common_name: "{{ inventory_hostname }}"
+    organizational_unit: IT
+    organization_name: Prom Proxy
+    country_name: US
+    email_address: admin@proxy.com
+  become: true
+
+- name: Generate a Self-Signed Certificate
+  openssl_certificate:
+    path: /etc/nginx/cert/proxy.crt
+    privatekey_path: /etc/nginx/cert/proxy.key
+    csr_path: /etc/nginx/cert/proxy.csr
+    provider: selfsigned
+  become: true
+
+- name: Deploy config files
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dst }}"
+    mode: "{{ item.mode }}"
+  become: true
+  loop:
+    - { mode: 644, src: "nginx/proxy.conf", dst: "/etc/nginx/conf.d/proxy.conf" }
   register: st2
 
 - name: Restart nginx after config change
