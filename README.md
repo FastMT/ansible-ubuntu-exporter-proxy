@@ -25,11 +25,11 @@ playbook.yml:
 ```
 # Deploy nginx to proxy http calls from prometheus to exporters
 - role: "ubuntu-exporter-proxy"
-    vars:
+  vars:
     # Allow IPs and subnets with Prometheus servers
     proxy_allow:
-        - '10.0.0.0/8'
-        - '1.2.3.4'
+      - '10.0.0.0/8'
+      - '1.2.3.4'
     # Listen port - optional parameter (default 8888)
     ubuntu_exporter_proxy_port: 8888 
 ```
